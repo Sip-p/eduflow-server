@@ -120,8 +120,11 @@ cloudinary.v2.config({
 // Middlewares
 app.use(
   cors({
-   origin: [ process.env.FRONTEND_URL || "http://localhost:5173",
-  process.env.BACKEND_URL || "http://localhost:3000"],
+ origin: [
+      "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+      "http://localhost:5173",
+      "http://localhost:3000"
+    ],
     credentials: true,
   })
 );
@@ -148,8 +151,11 @@ app.use("/api/delete",accountdeleteRoutes)
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: [ process.env.FRONTEND_URL || "http://localhost:5173",
-  process.env.BACKEND_URL || "http://localhost:3000"],
+    origin: [
+      "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+      "http://localhost:5173",
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST"],
   },
 });
