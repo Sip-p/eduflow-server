@@ -118,13 +118,43 @@ cloudinary.v2.config({
 });
 
 // Middlewares
+// app.use(
+//   cors({
+//  origin: [
+//       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+//       "http://localhost:5173",
+//       "http://localhost:3000"
+//     ],
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
- origin: [
-      "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
-      "http://localhost:5173",
-      "http://localhost:3000"
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "https://eduflow-client-382a.vercel.app",
+        /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,  // ✅ Matches ALL preview deployments
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ];
+      
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return allowed === origin;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
@@ -149,18 +179,42 @@ app.use("/api/review",reviewRoutes)
 app.use("/api/delete",accountdeleteRoutes)
 // Create HTTP + Socket.io server
 const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
-      "http://localhost:5173",
-      "http://localhost:3000"
-    ],
-    methods: ["GET", "POST"],
-  },
-});
+// const io = new Server(server, {
+//   cors: {
+//     origin: [
+//       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+//       "http://localhost:5173",
+//       "http://localhost:3000"
+//     ],
+//     methods: ["GET", "POST"],
+//   },
+// });
 
 // Middleware to attach io to req
+
+const io = new Server(server, {
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "https://eduflow-client-382a.vercel.app",
+        /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,  // ✅ Matches ALL preview deployments
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ];
+      
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed instanceof RegExp) return allowed.test(origin);
+        return allowed === origin;
+      });
+      
+      callback(null, isAllowed);
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 app.use((req, res, next) => {
   req.io = io;
   next();
