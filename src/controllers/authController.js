@@ -211,4 +211,32 @@ export const resetPassword = async (req, res) => {
 };
 
 
+export const resetPasswordFromSettings=async(req,res)=>{
+  console.log("Reace")
+  try {
+    
+    const authorization=req.headers["authorization"]
+console.log(authorization)
+const token=authorization.split(" ")[1]
+console.log("**********",token)
+const decoded=jwt.verify(token,process.env.JWT_SECRET)
+console.log("_______________",decoded.id)
+const user=await User.findById(decoded.id)
+console.log("The user is______",user)
+const {password}=req.body
+console.log("Password____",password)
+if(!password){
+  return
+}
+const newPassword=await bcrypt.hash(password,10)
+user.password=newPassword
+await user.save();
 
+console.log("New User",user)
+return res.status(201).json({success:true,user})
+  } catch (error) {
+    return res.status(500).json({success:false,message:error.message})
+  }
+ 
+
+}

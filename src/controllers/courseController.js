@@ -3,20 +3,118 @@ import Course from "../models/Course.js";
 import jwt from "jsonwebtoken";
 // import Notification from '../models/'
 import User from "../models/User.js";
-
-
+import Notification from "../models/Notification.js";
+import { Socket } from "socket.io";
 
 // Get all courses with pagination and filtering
+// export const getAllCourses = async (req, res) => {
+//   try{
+//     const allcourses=await Course.find().populate('instructor','name email pic')
+//     if(!allcourses){
+//       res.status(200).json({success:false})
+//     }
+//     res.status(200).json({success:true,courses:allcourses})
+//   } catch (error) {
+//     console.error('Get all courses error:', error);
+//     res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
 export const getAllCourses = async (req, res) => {
-  try{
-    const allcourses=await Course.find().populate('instructor','name email pic')
-    if(!allcourses){
-      res.status(200).json({success:false})
+  try {
+    const { 
+      category, 
+      published, 
+      minPrice, 
+      maxPrice,
+      search,
+      sort = 'createdAt',
+      order = 'desc'
+    } = req.query;
+
+    // Build match stage - NO studentsCount filter
+    const matchStage = {};
+    
+    if (category) matchStage.category = category;
+    
+    // ✅ Only filter by published if explicitly set
+    if (published !== undefined && published !== '') {
+      matchStage.published = published === 'true';
     }
-    res.status(200).json({success:true,courses:allcourses})
+    
+    if (minPrice || maxPrice) {
+      matchStage.price = {};
+      if (minPrice) matchStage.price.$gte = Number(minPrice);
+      if (maxPrice) matchStage.price.$lte = Number(maxPrice);
+    }
+
+    if (search) {
+      matchStage.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    console.log('Match Stage:', matchStage); // ✅ Debug log
+
+    const pipeline = [
+      // Only add $match if there are actual filters
+      ...(Object.keys(matchStage).length > 0 ? [{ $match: matchStage }] : []),
+      
+      {
+        $lookup: {
+          from: "users",
+          localField: "instructor",
+          foreignField: "_id",
+          as: "instructorData"
+        }
+      },
+      
+      {
+        $unwind: {
+          path: "$instructorData",
+          preserveNullAndEmptyArrays: true // ✅ Keep courses without instructor
+        }
+      },
+      
+      {
+        $addFields: {
+          lessonCount: { $size: { $ifNull: ["$lessons", []] } },
+          instructor: {
+            _id: "$instructorData._id",
+            name: "$instructorData.name",
+            email: "$instructorData.email",
+            pic: "$instructorData.pic"
+          }
+        }
+      },
+      
+      {
+        $project: {
+          instructorData: 0
+        }
+      },
+      
+      {
+        $sort: { [sort]: order === 'desc' ? -1 : 1 }
+      }
+    ];
+
+    const courses = await Course.aggregate(pipeline);
+
+    console.log('Total courses found:', courses.length); // ✅ Debug log
+
+    res.status(200).json({
+      success: true,
+      courses,
+      total: courses.length
+    });
+    
   } catch (error) {
     console.error('Get all courses error:', error);
-    res.status(500).json({ message: "Server Error", error: error.message });
+    res.status(500).json({ 
+      message: "Server Error", 
+      error: error.message 
+    });
   }
 };
 
@@ -161,29 +259,116 @@ export const getCourseById = async (req, res) => {
 
 //done****
 
-export const createCourse = async (req, res) => {
-  try {
+// export const createCourse = async (req, res) => {
+//   try {
    
 
-    const { title, description, price, category, thumbnail, lessons, published = false } = req.body;
+//     const { title, description, price, category, thumbnail, lessons, published = false } = req.body;
 
-    // Check JWT in Authorization header
+//     // Check JWT in Authorization header
+//     const authHeader = req.headers.authorization;
+//     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//       return res.status(401).json({ message: "Authentication required" });
+//     }
+
+//     const token = authHeader.split(' ')[1];
+//     let decoded;
+//     try {
+//       decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     } catch (err) {
+//       return res.status(401).json({ message: "Invalid token" });
+//     }
+
+//     const instructorId = decoded.id; // Use JWT ID
+
+//     // Validation
+//     if (!title || !description || !price || !category || !lessons || !Array.isArray(lessons) || lessons.length === 0) {
+//       return res.status(400).json({ message: "Missing required fields or lessons" });
+//     }
+
+//     if (isNaN(price) || price < 0) {
+//       return res.status(400).json({ message: "Price must be a valid positive number" });
+//     }
+
+//     // Validate each lesson
+//     for (let i = 0; i < lessons.length; i++) {
+//       const lesson = lessons[i];
+//       if (!lesson.title || !lesson.videoUrl) {
+//         return res.status(400).json({ message: `Lesson ${i + 1} must have title and video URL` });
+//       }
+//     }
+
+//     // Create course
+//     const newCourse = new Course({
+//       title: title.trim(),
+//       description: description.trim(),
+//       price: parseFloat(price),
+//       category: category.trim(),
+//       instructor: instructorId,
+//       thumbnail: thumbnail || '',
+//       lessons: lessons.map((lesson, index) => ({
+//         title: lesson.title.trim(),
+//         description: lesson.description ? lesson.description.trim() : '',
+//         videoUrl: lesson.videoUrl,
+//         duration: lesson.duration || 0,
+//         order: index + 1
+//       })),
+//       published: Boolean(published),
+//       studentsEnrolled: [],
+//       studentsCount: 0,
+//       createdAt: new Date(),
+//       updatedAt: new Date()
+//     });
+
+//     await newCourse.save();
+//  const notification = await Notification.create({
+//   course: newCourse._id,
+//   title: newCourse.title,
+//   createdBy: decoded.name || "Instructor Name", // make sure you have instructor name
+//   read: false,
+// });
+
+ 
+//       req.io.emit("courseNotification", {
+//       id: notification._id,
+//       message: notification.message,
+//       course: newCourse.title,
+//       createdAt: notification.createdAt,
+//     });
+//     res.status(201).json({
+//       message: "Course created successfully",
+//       course: {
+//         id: newCourse._id,
+//         title: newCourse.title,
+//         lessonsCount: newCourse.lessons.length,
+//         price: newCourse.price
+//       }
+//     });
+
+//   } catch (error) {
+//      res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
+
+export const createCourse = async (req, res) => {
+  try {
+    const { title, description, price, category, thumbnail, lessons, published=false } = req.body;
+    
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Authentication required" });
     }
+    
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const instructorId = decoded.id;
 
-    const token = authHeader.split(' ')[1];
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
-    const instructorId = decoded.id; // Use JWT ID
+    // Fetch instructor name
+    const instructor = await User.findById(instructorId);
+    if (!instructor) return res.status(404).json({ message: "Instructor not found" });
 
     // Validation
+   //     // Validation
     if (!title || !description || !price || !category || !lessons || !Array.isArray(lessons) || lessons.length === 0) {
       return res.status(400).json({ message: "Missing required fields or lessons" });
     }
@@ -200,31 +385,35 @@ export const createCourse = async (req, res) => {
       }
     }
 
-    // Create course
     const newCourse = new Course({
-      title: title.trim(),
-      description: description.trim(),
-      price: parseFloat(price),
-      category: category.trim(),
-      instructor: instructorId,
-      thumbnail: thumbnail || '',
-      lessons: lessons.map((lesson, index) => ({
-        title: lesson.title.trim(),
-        description: lesson.description ? lesson.description.trim() : '',
-        videoUrl: lesson.videoUrl,
-        duration: lesson.duration || 0,
-        order: index + 1
-      })),
-      published: Boolean(published),
-      studentsEnrolled: [],
-      studentsCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      title, description, price, category, instructor: instructorId,
+      thumbnail: thumbnail || "",
+      lessons: lessons.map((l, i) => ({ ...l, order: i+1 })),
+      published,
+      studentsEnrolled: [], studentsCount: 0,
+      createdAt: new Date(), updatedAt: new Date()
     });
 
     await newCourse.save();
 
- 
+  const notification = await Notification.create({
+  course: newCourse._id,
+  title: newCourse.title,
+  createdBy: decoded.name || "Instructor Name",
+  message: `New course created: ${newCourse.title} by ${decoded.name || "Instructor"}`,
+  read: false,
+});
+
+
+    // Emit notification via Socket.IO
+    req.io.emit("courseNotification", {
+      id: notification._id,
+      title: notification.title,
+      createdBy: notification.createdBy,
+      course: newCourse.title,
+      createdAt: notification.createdAt
+    });
+
     res.status(201).json({
       message: "Course created successfully",
       course: {
@@ -236,9 +425,11 @@ export const createCourse = async (req, res) => {
     });
 
   } catch (error) {
-     res.status(500).json({ message: "Server Error", error: error.message });
+    console.error("Create course error:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
 
 // Update a course
 // export const updateCourse = async (req, res) => {

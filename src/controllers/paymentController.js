@@ -1,61 +1,70 @@
-import express from'express'
- 
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-export const PayperCourse = async (req, res) => {
+// ✅ Helper: Get user from token
+const getUserFromToken = (req) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+
+  const token = authHeader.split(" ")[1]; // "Bearer <token>"
   try {
-    const { course } = req.body;
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
-
-    // console.log("Authorization token:", token);
-    // console.log("Requested course:", course);
-   
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Access token required",
-      });
-    }
-
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.id;
+  } catch {
+    return null;
+  }
+};
 
-    // Find user from token payload
-    const user = await User.findById(decoded.id).select("-password");
-    //   console.log("The USer",user)
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+// ✅ Create Dummy Order
+export const createOrder = async (req, res) => {
+  try {
+    const userId = getUserFromToken(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { courseId, amount } = req.body;
+    if (!courseId || !amount) {
+      return res.status(400).json({ message: "Course ID and amount required" });
     }
 
-    if(!user.coursesenrolled.includes(course._id)){
-        user.coursesenrolled.push(course._id);
-        await user.save()
-    }
-    // If course exists, continue payment logic
-    if (course) {
-      return res.status(200).json({
-        success: true,
-        message: "Payment initiated",
-        user: { id: user._id, name: user.name, email: user.email,coursesenrolled:user.coursesenrolled},
-        course,
-      });
-    }
+    // Create a fake orderId
+    const orderId = `order_${Date.now()}`;
 
-    return res.status(400).json({
-      success: false,
-      message: "Course not provided",
+    res.status(200).json({
+      orderId,
+      courseId,
+      amount,
+      message: "Dummy order created successfully",
     });
-  } catch (error) {
-    console.error("PayperCourse error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
+  } catch (err) {
+    console.error("Error creating dummy order:", err);
+    res.status(500).json({ message: "Failed to create dummy order" });
+  }
+};
+
+// ✅ Verify Dummy Payment
+export const verifyPayment = async (req, res) => {
+  try {
+    const userId = getUserFromToken(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { orderId, courseId } = req.body;
+    if (!orderId || !courseId) {
+      return res.status(400).json({ message: "Order ID and Course ID required" });
+    }
+
+    // Here you would normally save payment info
+    // For dummy, just say success
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { purchasedCourses: courseId },
     });
+
+    res.status(200).json({
+      message: "Dummy payment verified successfully. Course unlocked!",
+      orderId,
+      courseId,
+    });
+  } catch (err) {
+    console.error("Error verifying dummy payment:", err);
+    res.status(500).json({ message: "Failed to verify dummy payment" });
   }
 };
