@@ -127,7 +127,7 @@ export const getCourseById = async (req, res) => {
       return res.status(400).json({ message: "Invalid course ID" });
     }
     const course=await Course.findById(id)
-    console.log("Course found:",course)
+    // console.log("Course found:",course)
 
     const courseInstructor = await Course.findById(id)
       .populate('instructor', 'name email pic ')
@@ -137,17 +137,7 @@ export const getCourseById = async (req, res) => {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    // If user is not enrolled and course has lessons, hide video URLs
-    // const isInstructor = req.user && req.user.id === course.instructor._id.toString();
-    // const isEnrolled = req.user && course.studentsEnrolled.includes(req.user.id);
-    
-    // if (!isInstructor && !isEnrolled && course.lessons.length > 0) {
-    //   // Hide video URLs for non-enrolled users
-    //   course.lessons = course.lessons.map(lesson => ({
-    //     ...lesson.toObject(),
-    //     videoUrl: undefined
-    //   }));
-    // }
+     
 
     res.status(200).json(course);
   } catch (error) {
@@ -156,8 +146,7 @@ export const getCourseById = async (req, res) => {
   }
 };
 
-// Create a new course
-// export const createCourse = async (req, res) => {
+  
 //   try {
 //     const { 
 //       title, 
@@ -350,9 +339,91 @@ export const getCourseById = async (req, res) => {
 //   }
 // };
 
+// export const createCourse = async (req, res) => {
+//   try {
+//     const { title, description, price, category, thumbnail, lessons, published=false } = req.body;
+    
+//     const authHeader = req.headers.authorization;
+//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//       return res.status(401).json({ message: "Authentication required" });
+//     }
+    
+//     const token = authHeader.split(" ")[1];
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const instructorId = decoded.id;
+
+//     // Fetch instructor name
+//     const instructor = await User.findById(instructorId);
+//     if (!instructor) return res.status(404).json({ message: "Instructor not found" });
+
+//     // Validation
+//    //     // Validation
+//     if (!title || !description || !price || !category || !lessons || !Array.isArray(lessons) || lessons.length === 0) {
+//       return res.status(400).json({ message: "Missing required fields or lessons" });
+//     }
+// // consolle.log("++++++++++++++++++")
+// // console.log(lessons)
+// // consolle.log("++++++++++++++++++")
+//     if (isNaN(price) || price < 0) {
+//       return res.status(400).json({ message: "Price must be a valid positive number" });
+//     }
+
+//     // Validate each lesson
+//     for (let i = 0; i < lessons.length; i++) {
+//       const lesson = lessons[i];
+//       if (!lesson.title || !lesson.videoUrl) {
+//         return res.status(400).json({ message: `Lesson ${i + 1} must have title and video URL` });
+//       }
+//     }
+
+//     const newCourse = new Course({
+//       title, description, price, category, instructor: instructorId,
+//       thumbnail: thumbnail || "",
+//       lessons: lessons.map((l, i) => ({ ...l, order: i+1 })),
+//       published,
+//       studentsEnrolled: [], studentsCount: 0,
+//       createdAt: new Date(), updatedAt: new Date()
+//     });
+
+//     await newCourse.save();
+
+//   const notification = await Notification.create({
+//   course: newCourse._id,
+//   title: newCourse.title,
+//   createdBy: decoded.name || "Instructor Name",
+//   message: `New course created: ${newCourse.title} by ${decoded.name || "Instructor"}`,
+//   read: false,
+// });
+
+
+//     // Emit notification via Socket.IO
+//     // req.io.emit("courseNotification", {
+//     //   id: notification._id,
+//     //   title: notification.title,
+//     //   createdBy: notification.createdBy,
+//     //   course: newCourse.title,
+//     //   createdAt: notification.createdAt
+//     // });
+
+//     res.status(201).json({
+//       message: "Course created successfully",
+//       course: {
+//         id: newCourse._id,
+//         title: newCourse.title,
+//         lessonsCount: newCourse.lessons.length,
+//         price: newCourse.price
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Create course error:", error);
+//     res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
+
 export const createCourse = async (req, res) => {
   try {
-    const { title, description, price, category, thumbnail, lessons, published=false } = req.body;
+    const { title, description, price, category, thumbnail, lessons, published = false } = req.body;
     
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -367,13 +438,14 @@ export const createCourse = async (req, res) => {
     const instructor = await User.findById(instructorId);
     if (!instructor) return res.status(404).json({ message: "Instructor not found" });
 
-    // Validation
-   //     // Validation
-    if (!title || !description || !price || !category || !lessons || !Array.isArray(lessons) || lessons.length === 0) {
+    // Validation - FIXED: Check for undefined/null instead of falsy values
+    if (!title || !description || price === undefined || price === null || !category || !lessons || !Array.isArray(lessons) || lessons.length === 0) {
       return res.status(400).json({ message: "Missing required fields or lessons" });
     }
 
-    if (isNaN(price) || price < 0) {
+    // Validate price is a valid number
+    const parsedPrice = parseFloat(price);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
       return res.status(400).json({ message: "Price must be a valid positive number" });
     }
 
@@ -386,32 +458,28 @@ export const createCourse = async (req, res) => {
     }
 
     const newCourse = new Course({
-      title, description, price, category, instructor: instructorId,
+      title, 
+      description, 
+      price: parsedPrice, // Use parsed price
+      category, 
+      instructor: instructorId,
       thumbnail: thumbnail || "",
-      lessons: lessons.map((l, i) => ({ ...l, order: i+1 })),
+      lessons: lessons.map((l, i) => ({ ...l, order: i + 1 })),
       published,
-      studentsEnrolled: [], studentsCount: 0,
-      createdAt: new Date(), updatedAt: new Date()
+      studentsEnrolled: [], 
+      studentsCount: 0,
+      createdAt: new Date(), 
+      updatedAt: new Date()
     });
 
     await newCourse.save();
 
-  const notification = await Notification.create({
-  course: newCourse._id,
-  title: newCourse.title,
-  createdBy: decoded.name || "Instructor Name",
-  message: `New course created: ${newCourse.title} by ${decoded.name || "Instructor"}`,
-  read: false,
-});
-
-
-    // Emit notification via Socket.IO
-    req.io.emit("courseNotification", {
-      id: notification._id,
-      title: notification.title,
-      createdBy: notification.createdBy,
-      course: newCourse.title,
-      createdAt: notification.createdAt
+    const notification = await Notification.create({
+      course: newCourse._id,
+      title: newCourse.title,
+      createdBy: decoded.name || "Instructor Name",
+      message: `New course created: ${newCourse.title} by ${decoded.name || "Instructor"}`,
+      read: false,
     });
 
     res.status(201).json({
@@ -429,7 +497,6 @@ export const createCourse = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
-
 
 // Update a course
 // export const updateCourse = async (req, res) => {
@@ -638,7 +705,8 @@ export const getCoursesByInstructor = async (req, res) => {
     const instructorId=decoded.id
     const courses=await Course.find({instructor:instructorId}).populate('instructor','name email pic').sort({createdAt:-1})
     console.log("Courses found:",courses)
-    return res.status(200).json({success:true,courses:courses})
+    console.log("Courses length+++++++++++",courses.length)
+    return res.status(200).json({success:true,courses:courses,length:courses.length})
   }
   catch (error) {
     console.error('Get instructor courses error:', error);
@@ -712,6 +780,32 @@ export const getCoursesByInstructor = async (req, res) => {
 //   }
 // };
  
+export const addMyCourses=async (req,res)=>{
+  try {
+    const {courseId}=req.body
+    console.log("=========>>>",courseId)
+    const course=await Course.findById(courseId)
+    const authheader = req.headers["authorization"];
+    const token = authheader && authheader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const id = decoded.id;
+    const user=await User.findById(id)
+    if(!user){
+      return res.status(400).json({success:false,message:"user not found"})
+    }
+    // Avoid duplicate enrollments
+    if (user.coursesenrolled.includes(course)) {
+      return res.status(400).json({ success: false, message: "Already enrolled in this course" });
+    }
+
+    user.coursesenrolled.push(course);
+    await user.save();
+    return res.status(200).json({success:true,message:"Course added successfully to my courses"})
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({success:false,message:error.message})
+  }
+}
 
 export const getMyCourses = async (req, res) => {
   try {

@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
     }
   }
 ],
+attemptedQuizzes:[{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:'Quiz'
+}]
     
 },
  { timestamps: true });

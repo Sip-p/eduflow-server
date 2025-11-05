@@ -100,11 +100,13 @@ import paymentRoutes from "./src/routes/paymentRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoute.js";
 import groupchatRoutes from './src/routes/groupchatRoutes.js'
 import reviewRoutes from './src/routes/reviewRoutes.js' 
+import quizRoutes from './src/routes/quizRoutes.js'
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import GroupMessage from "./src/models/GroupMessage.js";
 import accountdeleteRoutes from './src/routes/accountdeleteRoutes.js'
+import assignmentsRoutes from './src/routes/assignmentsRoutes.js'
 dotenv.config();
 
 const app = express();
@@ -177,6 +179,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/messages", groupchatRoutes);
 app.use("/api/review",reviewRoutes)
 app.use("/api/delete",accountdeleteRoutes)
+app.use("/api/quiz",quizRoutes)
+app.use("/api/assignments",assignmentsRoutes)
 // Create HTTP + Socket.io server
 const server = createServer(app);
 // const io = new Server(server, {
