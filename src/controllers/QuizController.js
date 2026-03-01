@@ -313,7 +313,7 @@ export const getQuizResultforInstructor = async (req, res) => {
     console.log("Attempts fetched from DB:", attempts);
 
     const studentIds = attempts.map(attempt => attempt.studentId._id);
-    console.log("Student IDs extracted:", studentIds);
+    // console.log("Student IDs extracted:", studentIds);
  
     
    const scores=await Promise.all(

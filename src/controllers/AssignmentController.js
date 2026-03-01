@@ -45,7 +45,7 @@ export const getCourseAssignments=async(req,res)=>{
     try {
        const {courseId}=req.params; 
        const assignments=await Assignment.find({course:courseId})
-       console.log("Fetched assignments for course:", courseId, assignments);
+    //    console.log("Fetched assignments for course:", courseId, assignments);
        res.status(200).json({
         assignments
        })

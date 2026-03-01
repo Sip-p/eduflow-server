@@ -21,23 +21,28 @@ export const uploadVideo = async (req, res) => {
   try {
     if (!req.file) throw new Error("No file uploaded");
 
-    const result = await cloudinary.uploader.upload(req.file.path, { 
+    const result = await cloudinary.uploader.upload_large(req.file.path, {
       resource_type: "video",
-      folder: "courses/videos"
+      folder: "courses/videos",
+      chunk_size: 6000000 // 6MB chunks
     });
 
-    // Delete local file
     fs.unlinkSync(req.file.path);
 
     res.json({
       url: result.secure_url,
       duration: result.duration || 0
     });
+
   } catch (error) {
     console.error("Video upload error:", error);
-    res.status(500).json({ message: "Video upload failed", error: error.message });
+    res.status(500).json({ 
+      message: "Video upload failed", 
+      error: error.message 
+    });
   }
 };
+
 
  
 // export const uploadAssignment = async (req, res) => {

@@ -6,7 +6,8 @@ import crypto from 'crypto'
 import nodemailer from "nodemailer"
 import multer from 'multer'
  import cloudinary from 'cloudinary';
-
+import path from 'path'
+import fs from "fs";
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -70,35 +71,114 @@ const token=generateToken(student._id);
 
  //  import generateToken from '../utils/generateToken.js';
 
+// export const UserSignUp = async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
+//     const file = req.file; // from multer
+// console.log("role--",role)
+//     if (!name || !email || !password ||!role) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Name, email, password and profile picture are required"
+//       });
+//     }
+
+//     // Upload to Cloudinary
+//     const result = await cloudinary.v2.uploader.upload(file.path, {
+//       folder: 'profile_pics',
+//       width: 150,
+//       crop: 'scale'
+//     });
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create user
+//     const user = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role,
+//       pic: result.secure_url // store Cloudinary URL
+//     });
+
+//     const token = generateToken(user._id);
+
+//     // res.status(201).json({
+//     //   success: true,
+//     //   message: "User created successfully",
+//     //   token,
+//     //   user: {
+//     //     id: user._id,
+//     //     name: user.name,
+//     //     email: user.email,
+//     //     pic: user.pic,
+//     //     role: user.role
+//     //   }
+//     // });
+
+//     res.status(201).json({
+//   success: true,
+//   message: "TEST RESPONSE",
+//   token,
+//   user: {
+//     id: user._id,
+//     name: user.name,
+//     email: user.email,
+//     pic: user.pic,
+//     role: user.role,
+//     testField: "HELLO_FROM_BACKEND"
+//   }
+// });
+
+//   } catch (error) {
+//     console.error("Signup error:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const UserSignUp = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    const file = req.file; // from multer
+    const file = req.file;
 
-    if (!name || !email || !password || !file||!role) {
+    console.log("role--", role);
+    console.log("file--", file);
+
+    if (!name || !email || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, password and profile picture are required"
+        message: "Name, email, password and role are required"
       });
     }
 
-    // Upload to Cloudinary
-    const result = await cloudinary.v2.uploader.upload(file.path, {
-      folder: 'profile_pics',
-      width: 150,
-      crop: 'scale'
-    });
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        message: "Profile picture is required"
+      });
+    }
 
-    // Hash password
+ 
+const fixedPath = path.resolve(file.path);
+
+const result = await cloudinary.uploader.upload(fixedPath, {
+  folder: "profile_pics",
+  width: 150,
+  crop: "scale",
+});
+
+ fs.unlinkSync(fixedPath); 
+
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role,
-      pic: result.secure_url // store Cloudinary URL
+      pic: result.secure_url
     });
 
     const token = generateToken(user._id);
@@ -121,6 +201,7 @@ export const UserSignUp = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const requestPasswordReset = async (req, res) => {
   try {
