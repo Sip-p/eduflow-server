@@ -85,7 +85,7 @@ const router = express.Router();
 // ── Public (no login needed) ──────────────────────────────────────────────
 router.get("/", getAllCourses);
 router.get("/instructor/courses",   authenticateToken, restrictTo("teacher"), getCoursesByInstructor);
-router.get("/instructor/dashboard", authenticateToken, restrictTo("teacher"), getInstdashboarddata);
+router.get("/instructor-dashboard", authenticateToken, restrictTo("teacher"), getInstdashboarddata);
 router.get("/mycourses",            authenticateToken, restrictTo("student"), getMyCourses);
 router.get("/:id/curriculum",       getCourseCurriculum);
 router.get("/:id",                  getCourseById);
