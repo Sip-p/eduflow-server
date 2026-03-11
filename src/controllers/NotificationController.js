@@ -1,23 +1,26 @@
 import Notification from "../models/Notification.js";
 
-// Get all notifications (for now global, later you can filter by user)
 export const getAllNotifications = async (req, res) => {
   try {
-    // Optional: filter by recipient if you pass userId in query
-    const { userId } = req.query;
+    // ✅ use authenticated user's id — never trust client-sent userId4
+console.log("User ID from token:", req.user._id); // debug log to verify user ID
+    const userId = req.user._id;
+console.log("Logged in user:", req.user._id);
+    const notifications = await Notification.find({ recipient: userId })
+      .populate("course", "title thumbnail")
+      .sort({ createdAt: -1 });
 
-    let query = {};
-    if (userId) {
-      query.recipient = userId;
-    }
+    // ✅ response shape matches what your store expects: data.notifications
+    return res.status(200).json({
+      success: true,
+      notifications,
+    });
 
-    const notifications = await Notification.find(query)
-      .populate("recipient", "name email")  // show user details
-      .populate("course", "title")          // show course details
-      .sort({ createdAt: -1 });             // newest first
-
-    res.status(200).json(notifications);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch notifications", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch notifications",
+      error: error.message,
+    });
   }
 };

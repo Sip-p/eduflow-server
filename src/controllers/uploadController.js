@@ -5,7 +5,7 @@ export const uploadImage = async (req, res) => {
   try {
     if (!req.file) throw new Error("No file uploaded");
 
-    const result = await cloudinary.uploader.upload(req.file.path, { folder: "courses/thumbnails" });
+    const result = await cloudinary.uploader.upload(req.file.path, { asset_folder: "courses/thumbnails" });
 
     // Delete local file after upload
     fs.unlinkSync(req.file.path);
@@ -17,31 +17,31 @@ export const uploadImage = async (req, res) => {
   }
 };
 
-export const uploadVideo = async (req, res) => {
-  try {
-    if (!req.file) throw new Error("No file uploaded");
+// export const uploadVideo = async (req, res) => {
+//   try {
+//     if (!req.file) throw new Error("No file uploaded");
 
-    const result = await cloudinary.uploader.upload_large(req.file.path, {
-      resource_type: "video",
-      folder: "courses/videos",
-      chunk_size: 6000000 // 6MB chunks
-    });
+//     const result = await cloudinary.uploader.upload_large(req.file.path, {
+//       resource_type: "video",
+//       asset_folder: "courses/videos",
+//       chunk_size: 6000000 // 6MB chunks
+//     });
 
-    fs.unlinkSync(req.file.path);
+//     fs.unlinkSync(req.file.path);
 
-    res.json({
-      url: result.secure_url,
-      duration: result.duration || 0
-    });
+//     res.json({
+//       url: result.secure_url,
+//       duration: result.duration || 0
+//     });
 
-  } catch (error) {
-    console.error("Video upload error:", error);
-    res.status(500).json({ 
-      message: "Video upload failed", 
-      error: error.message 
-    });
-  }
-};
+//   } catch (error) {
+//     console.error("Video upload error:", error);
+//     res.status(500).json({ 
+//       message: "Video upload failed", 
+//       error: error.message 
+//     });
+//   }
+// };
 
 
  
@@ -70,7 +70,37 @@ export const uploadVideo = async (req, res) => {
 //   }
 // };
 
+export const uploadVideo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
+    const filePath = req.file.path;
+
+    const result = await cloudinary.uploader.upload(filePath, {
+      resource_type: "video",
+      folder: "courses/videos"
+    });
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    return res.status(200).json({
+      url: result.secure_url,
+      duration: Math.round(result.duration || 0)
+    });
+
+  } catch (error) {
+    console.error("Video upload error:", error);
+
+    return res.status(500).json({
+      message: "Video upload failed",
+      error: error.message
+    });
+  }
+};
 export const uploadAssignment = async (req, res) => {
   try {
     if (!req.file) throw new Error("No file uploaded");
@@ -83,7 +113,7 @@ export const uploadAssignment = async (req, res) => {
 
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "raw",
-      folder: "assignments/files",
+      asset_folder: "assignments/files",
       use_filename: true,
       unique_filename: true,
     });
@@ -98,7 +128,7 @@ export const uploadAssignment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Assignment upload error:", error);
+    // console.error("Assignment upload error:", error);
     res.status(500).json({ message: "Assignment upload failed", error: error.message });
   }
 };

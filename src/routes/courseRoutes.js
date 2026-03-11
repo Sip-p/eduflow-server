@@ -76,7 +76,7 @@ import {
   getMyCourses,
   getCourseCurriculum,
   getLessonVideo,
-  markLessonComplete,
+  markLessonComplete,autoEnrollFree
 } from "../controllers/courseController.js";
 import { authenticateToken, restrictTo } from "../middleware/authmiddleware.js";
 
@@ -97,10 +97,10 @@ router.patch("/:id/publish",   authenticateToken, restrictTo("teacher"), toggleC
 
 // ── Student only ──────────────────────────────────────────────────────────
 router.post("/addmycourse",    authenticateToken, restrictTo("student"), addMyCourses);
-
-// ── Any logged-in user ────────────────────────────────────────────────────
+router.post("/auto-enroll/:courseId", authenticateToken, restrictTo("student"),autoEnrollFree )// ── Any logged-in user ────────────────────────────────────────────────────
 router.put("/stsupdate",       authenticateToken, updateCourse);
 router.get("/:courseId/lesson/:lessonId/video",      authenticateToken, getLessonVideo);
 router.patch("/:courseId/lesson/:lessonId/complete", authenticateToken, markLessonComplete);
+
 
 export default router;

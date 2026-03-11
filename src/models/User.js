@@ -100,11 +100,25 @@ const userSchema = new mongoose.Schema({
     type: Date
   }
   ,
-  coursesenrolled:[{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Course"
-        
-    }],
+ coursesenrolled: [
+  {
+    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+    progressStatus: { 
+      type: String, 
+      enum: ['in-progress', 'completed'],
+      default: 'in-progress' 
+    }
+  }
+],
+courseProgress: [          // ← ADD THIS BACK
+    {
+      course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+      status: { type: String, enum: ["not started", "continue", "completed"], default: "not started" },
+      completedLessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
+      progressPercent: { type: Number, default: 0 },
+      lastAccessedLesson: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson', default: null }
+    }
+  ]
 }, { timestamps: true });      // ✅ FIXED THIS
 
 const User = mongoose.model("User", userSchema);

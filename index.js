@@ -1,91 +1,315 @@
+// // // import express from "express";
+// // // import dotenv from "dotenv";
+// // // import bcrypt from "bcryptjs";
+// // // import connectDB from './src/config/db.js'
+// // // import cloudinary from 'cloudinary'
+// // // import authRoutes from './src/routes/authRoutes.js'
+// // // import uploadRoutes from './src/routes/uploadRoutes.js'
+// // // import courseRoutes from './src/routes/courseRoutes.js' 
+// // // import paymentRoutes from './src/routes/paymentRoutes.js'
+// // // import notificationRoutes from './src/routes/notificationRoute.js'
+// // // import groupchatRoutes from './src/routes/groupchatRoutes.js'
+// // // import cors from 'cors'
+// // // import {createServer} from 'http'
+// // // import {Server} from "socket.io"
+// // // // Load environment variables
+// // // dotenv.config();
+
+// // // const app = express();
+// // // const PORT = process.env.PORT || 3000;
+
+// // // cloudinary.v2.config({
+// // //    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+// // //   api_key: process.env.CLOUDINARY_API_KEY,
+// // //   api_secret: process.env.CLOUDINARY_API_SECRET
+// // // })
+
+// // // // Add app.use() and complete the origin URL
+// // // app.use(cors({
+// // //   origin: ["http://localhost:5173", "http://localhost:3000"],
+// // //   credentials: true
+// // // }));
+ 
+
+// // // // Middleware
+// // // app.use(express.json());
+// // // connectDB()
+
+// // // // Home route
+// // // app.get("/", (req, res) => {
+// // //   res.send("🚀 Server is running...");
+// // // });
+ 
+ 
+// // // const server=createServer(app);
+// // // const io=new Server(server,{
+// // //   cors:{
+// // //     origin: ["http://localhost:5173", "http://localhost:3000"],
+// // //     methods:["GET","POST"]
+
+// // //   }
+// // // })
+
+// // // app.use((req, res, next) => {
+// // //   req.io = io;
+// // //   next();
+// // // });
+
+// // // app.use('/api/auth',authRoutes)
+// // // app.use('/api/upload',uploadRoutes)
+// // // app.use('/api/course',courseRoutes)
+// // // app.use('/api/payment',paymentRoutes)
+// // // app.use('/api/notifications',notificationRoutes)
+// // // app.use("/api/messages", groupchatRoutes);
+
+// // // io.on("connection",(socket)=>{
+// // //   console.log("connected Socket",socket.id)
+// // //   socket.on("newcourse",(courseData)=>{
+// // //     io.emit("courseNotification",courseData)
+// // //   })
+// // //   socket.on("joinCourse",(courseId)=>{
+// // //     socket.join(courseId)
+// // //     console.log(`User ${socket.id} joined course ${courseId}`)
+// // //   })
+
+// // //   socket.to(courseId).emit("UserJoined",{message:"SomeOne joined the chat"})
+// // //   socket.on("sendMessage",({courseId,user,message})=>{
+// // //     io.to(courseId).emit("receiveMessage",{user,message})
+// // //   })
+// // //   socket.on("disconnect",()=>{
+// // //     console.log("User disconnected",socket.id)
+// // //   })
+// // // })
+ 
+
+// // // // Start server
+
+// // // server.listen(PORT, () => {
+// // //   console.log(`✅ Server running on  ${PORT}`);
+// // // });
+
+
 // // import express from "express";
 // // import dotenv from "dotenv";
-// // import bcrypt from "bcryptjs";
-// // import connectDB from './src/config/db.js'
-// // import cloudinary from 'cloudinary'
-// // import authRoutes from './src/routes/authRoutes.js'
-// // import uploadRoutes from './src/routes/uploadRoutes.js'
-// // import courseRoutes from './src/routes/courseRoutes.js' 
-// // import paymentRoutes from './src/routes/paymentRoutes.js'
-// // import notificationRoutes from './src/routes/notificationRoute.js'
+// // import connectDB from "./src/config/db.js";
+// // import cloudinary from "cloudinary";
+
+// // import authRoutes from "./src/routes/authRoutes.js";
+// // import uploadRoutes from "./src/routes/uploadRoutes.js";
+// // import courseRoutes from "./src/routes/courseRoutes.js";
+// // import paymentRoutes from "./src/routes/paymentRoutes.js";
+// // import notificationRoutes from "./src/routes/notificationRoute.js";
 // // import groupchatRoutes from './src/routes/groupchatRoutes.js'
-// // import cors from 'cors'
-// // import {createServer} from 'http'
-// // import {Server} from "socket.io"
-// // // Load environment variables
+// // import reviewRoutes from './src/routes/reviewRoutes.js' 
+// // import quizRoutes from './src/routes/quizRoutes.js'
+// // import cloudinaryRoutes from './src/routes/cloudinaryRoutes.js'
+
+// // import cors from "cors";
+// // import { createServer } from "http";
+// // import { Server } from "socket.io";
+// // import GroupMessage from "./src/models/GroupMessage.js";
+// // import accountdeleteRoutes from './src/routes/accountdeleteRoutes.js'
+// //  import assignmentsRoutes from './src/routes/assignmentsRoutes.js'
 // // dotenv.config();
 
 // // const app = express();
 // // const PORT = process.env.PORT || 3000;
 
+// // // Cloudinary config
 // // cloudinary.v2.config({
-// //    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+// //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
 // //   api_key: process.env.CLOUDINARY_API_KEY,
-// //   api_secret: process.env.CLOUDINARY_API_SECRET
-// // })
+// //   api_secret: process.env.CLOUDINARY_API_SECRET,
+// // });
 
-// // // Add app.use() and complete the origin URL
-// // app.use(cors({
-// //   origin: ["http://localhost:5173", "http://localhost:3000"],
-// //   credentials: true
-// // }));
- 
+// // // Middlewares
+// // // app.use(
+// // //   cors({
+// // //  origin: [
+// // //       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+// // //       "http://localhost:5173",
+// // //       "http://localhost:3000"
+// // //     ],
+// // //     credentials: true,
+// // //   })
+// // // );
 
-// // // Middleware
+// // app.use(
+// //   cors({
+// //     origin: (origin, callback) => {
+// //       // Allow requests with no origin (like mobile apps or curl)
+// //       if (!origin) return callback(null, true);
+      
+// //       const allowedOrigins = [
+// //         "https://eduflow-client-382a.vercel.app",
+// //         /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,  // ✅ Matches ALL preview deployments
+// //         "http://localhost:5173",
+// //         "http://localhost:3000"
+// //       ];
+      
+// //       const isAllowed = allowedOrigins.some(allowed => {
+// //         if (allowed instanceof RegExp) {
+// //           return allowed.test(origin);
+// //         }
+// //         return allowed === origin;
+// //       });
+      
+// //       if (isAllowed) {
+// //         callback(null, true);
+// //       } else {
+// //         callback(new Error('Not allowed by CORS'));
+// //       }
+// //     },
+// //     credentials: true,
+// //   })
+// // );
 // // app.use(express.json());
-// // connectDB()
+
+// // // DB connect
+// // connectDB();
 
 // // // Home route
 // // app.get("/", (req, res) => {
 // //   res.send("🚀 Server is running...");
 // // });
- 
- 
-// // const server=createServer(app);
-// // const io=new Server(server,{
-// //   cors:{
-// //     origin: ["http://localhost:5173", "http://localhost:3000"],
-// //     methods:["GET","POST"]
 
-// //   }
-// // })
+// // // Routes
+// // app.use("/api/auth", authRoutes);
+// // app.use("/api/upload", uploadRoutes);
+// // app.use("/api/course", courseRoutes);
+// // app.use("/api/payment", paymentRoutes);
+// // app.use("/api/notifications", notificationRoutes);
+// // app.use("/api/messages", groupchatRoutes);
+// // app.use("/api/review",reviewRoutes)
+// // app.use("/api/delete",accountdeleteRoutes)
+// // app.use("/api/quiz",quizRoutes)
+// // app.use("/api/assignments",assignmentsRoutes)
+// // app.use("/api/cloudinary", cloudinaryRoutes);
 
+// // // Create HTTP + Socket.io server
+// // const server = createServer(app);
+// // // const io = new Server(server, {
+// // //   cors: {
+// // //     origin: [
+// // //       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
+// // //       "http://localhost:5173",
+// // //       "http://localhost:3000"
+// // //     ],
+// // //     methods: ["GET", "POST"],
+// // //   },
+// // // });
+
+// // // Middleware to attach io to req
+
+// // const io = new Server(server, {
+// //   cors: {
+// //     origin: (origin, callback) => {
+// //       if (!origin) return callback(null, true);
+      
+// //      // Put this ABOVE app and io setup
+// // const allowedOrigins = [
+// //   "https://eduflow-client-jgsd.vercel.app",
+// //   "https://eduflow-client-382a.vercel.app",
+// //   /^https:\/\/eduflow-client-jgsd.*\.vercel\.app$/,
+// //   /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,
+// //   "http://localhost:5173",
+// //   "http://localhost:3000"
+// // ];
+
+// // const corsHandler = (origin, callback) => {
+// //   if (!origin) return callback(null, true);
+// //   const allowed = allowedOrigins.some(o =>
+// //     o instanceof RegExp ? o.test(origin) : o === origin
+// //   );
+// //   allowed ? callback(null, true) : callback(new Error('Not allowed by CORS'));
+// // };
+
+// // // Express
+// // app.use(cors({ origin: corsHandler, credentials: true }));
+
+// // // Socket.IO
+// // const io = new Server(server, {
+// //   cors: { origin: corsHandler, methods: ["GET", "POST"], credentials: true }
+// // });
+      
+// //       const isAllowed = allowedOrigins.some(allowed => {
+// //         if (allowed instanceof RegExp) return allowed.test(origin);
+// //         return allowed === origin;
+// //       });
+      
+// //       callback(null, isAllowed);
+// //     },
+// //     methods: ["GET", "POST"],
+// //     credentials: true,
+// //   },
+// // });
 // // app.use((req, res, next) => {
 // //   req.io = io;
 // //   next();
 // // });
 
-// // app.use('/api/auth',authRoutes)
-// // app.use('/api/upload',uploadRoutes)
-// // app.use('/api/course',courseRoutes)
-// // app.use('/api/payment',paymentRoutes)
-// // app.use('/api/notifications',notificationRoutes)
-// // app.use("/api/messages", groupchatRoutes);
+// // // SOCKET LOGIC
+// // io.on("connection", (socket) => {
+// //   console.log("⚡ New client connected:", socket.id);
 
-// // io.on("connection",(socket)=>{
-// //   console.log("connected Socket",socket.id)
-// //   socket.on("newcourse",(courseData)=>{
-// //     io.emit("courseNotification",courseData)
-// //   })
-// //   socket.on("joinCourse",(courseId)=>{
-// //     socket.join(courseId)
-// //     console.log(`User ${socket.id} joined course ${courseId}`)
-// //   })
+// //   // Course notification (when instructor creates a new course)
+// //   socket.on("newcourse", (courseData) => {
+// //     io.emit("courseNotification", courseData);
+// //     console.log("📢 Course notification sent:", courseData.title);
+// //   });
 
-// //   socket.to(courseId).emit("UserJoined",{message:"SomeOne joined the chat"})
-// //   socket.on("sendMessage",({courseId,user,message})=>{
-// //     io.to(courseId).emit("receiveMessage",{user,message})
-// //   })
-// //   socket.on("disconnect",()=>{
-// //     console.log("User disconnected",socket.id)
-// //   })
-// // })
- 
+// //   // Join course room
+// //   socket.on("joinCourse", (courseId) => {
+// //     socket.join(courseId);
+// //     console.log(`✅ User ${socket.id} joined course ${courseId}`);
+
+// //     // Notify others in the room
+// //     socket.to(courseId).emit("userJoined", {
+// //       message: "A new user joined the chat",
+// //     });
+// //   });
+
+// //   // Handle messages
+// //  socket.on("sendMessage", async ({ courseId, user, message }) => {
+// //   try {
+// //     if (!user?._id) {
+// //       console.warn("❌ Missing user._id in message");
+// //       return;
+// //     }
+
+// //     const newMsg = await GroupMessage.create({
+// //       courseId,
+// //       sender: user._id,  // ✅ save ObjectId in DB
+// //       message,
+// //       timestamp: new Date(),
+// //     });
+
+// //     const populatedMsg = await newMsg.populate("sender", "name pic");
+
+// //     // Send to everyone in the course room
+// //     io.to(courseId).emit("receiveMessage", {
+// //       _id: populatedMsg._id,
+// //       user: {
+// //         name: populatedMsg.sender.name,
+// //         avatar: populatedMsg.sender.pic,
+// //       },
+// //       message: populatedMsg.message,
+// //       timestamp: populatedMsg.timestamp,
+// //     });
+// //   } catch (err) {
+// //     console.error("❌ Error saving message:", err);
+// //   }
+// // });
+
+
+// //   socket.on("disconnect", () => {
+// //     console.log("❌ User disconnected:", socket.id);
+// //   });
+// // });
 
 // // // Start server
-
 // // server.listen(PORT, () => {
-// //   console.log(`✅ Server running on  ${PORT}`);
+// //   console.log(`✅ Server running on ${PORT}`);
 // // });
 
 
@@ -93,223 +317,138 @@
 // import dotenv from "dotenv";
 // import connectDB from "./src/config/db.js";
 // import cloudinary from "cloudinary";
+// import cors from "cors";
+// import { createServer } from "http";
+// import { Server } from "socket.io";
 
 // import authRoutes from "./src/routes/authRoutes.js";
 // import uploadRoutes from "./src/routes/uploadRoutes.js";
 // import courseRoutes from "./src/routes/courseRoutes.js";
 // import paymentRoutes from "./src/routes/paymentRoutes.js";
 // import notificationRoutes from "./src/routes/notificationRoute.js";
-// import groupchatRoutes from './src/routes/groupchatRoutes.js'
-// import reviewRoutes from './src/routes/reviewRoutes.js' 
-// import quizRoutes from './src/routes/quizRoutes.js'
-// import cloudinaryRoutes from './src/routes/cloudinaryRoutes.js'
-
-// import cors from "cors";
-// import { createServer } from "http";
-// import { Server } from "socket.io";
+// import groupchatRoutes from "./src/routes/groupchatRoutes.js";
+// import reviewRoutes from "./src/routes/reviewRoutes.js";
+// import quizRoutes from "./src/routes/quizRoutes.js";
+// import cloudinaryRoutes from "./src/routes/cloudinaryRoutes.js";
+// import accountdeleteRoutes from "./src/routes/accountdeleteRoutes.js";
+// import assignmentsRoutes from "./src/routes/assignmentsRoutes.js";
 // import GroupMessage from "./src/models/GroupMessage.js";
-// import accountdeleteRoutes from './src/routes/accountdeleteRoutes.js'
-//  import assignmentsRoutes from './src/routes/assignmentsRoutes.js'
+
 // dotenv.config();
 
-// const app = express();
-// const PORT = process.env.PORT || 3000;
-
-// // Cloudinary config
-// cloudinary.v2.config({
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-//   api_key: process.env.CLOUDINARY_API_KEY,
-//   api_secret: process.env.CLOUDINARY_API_SECRET,
-// });
-
-// // Middlewares
-// // app.use(
-// //   cors({
-// //  origin: [
-// //       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
-// //       "http://localhost:5173",
-// //       "http://localhost:3000"
-// //     ],
-// //     credentials: true,
-// //   })
-// // );
-
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       // Allow requests with no origin (like mobile apps or curl)
-//       if (!origin) return callback(null, true);
-      
-//       const allowedOrigins = [
-//         "https://eduflow-client-382a.vercel.app",
-//         /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,  // ✅ Matches ALL preview deployments
-//         "http://localhost:5173",
-//         "http://localhost:3000"
-//       ];
-      
-//       const isAllowed = allowedOrigins.some(allowed => {
-//         if (allowed instanceof RegExp) {
-//           return allowed.test(origin);
-//         }
-//         return allowed === origin;
-//       });
-      
-//       if (isAllowed) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error('Not allowed by CORS'));
-//       }
-//     },
-//     credentials: true,
-//   })
-// );
-// app.use(express.json());
-
-// // DB connect
-// connectDB();
-
-// // Home route
-// app.get("/", (req, res) => {
-//   res.send("🚀 Server is running...");
-// });
-
-// // Routes
-// app.use("/api/auth", authRoutes);
-// app.use("/api/upload", uploadRoutes);
-// app.use("/api/course", courseRoutes);
-// app.use("/api/payment", paymentRoutes);
-// app.use("/api/notifications", notificationRoutes);
-// app.use("/api/messages", groupchatRoutes);
-// app.use("/api/review",reviewRoutes)
-// app.use("/api/delete",accountdeleteRoutes)
-// app.use("/api/quiz",quizRoutes)
-// app.use("/api/assignments",assignmentsRoutes)
-// app.use("/api/cloudinary", cloudinaryRoutes);
-
-// // Create HTTP + Socket.io server
-// const server = createServer(app);
-// // const io = new Server(server, {
-// //   cors: {
-// //     origin: [
-// //       "https://eduflow-client-382a.vercel.app",  // ✅ Add your Vercel URL
-// //       "http://localhost:5173",
-// //       "http://localhost:3000"
-// //     ],
-// //     methods: ["GET", "POST"],
-// //   },
-// // });
-
-// // Middleware to attach io to req
-
-// const io = new Server(server, {
-//   cors: {
-//     origin: (origin, callback) => {
-//       if (!origin) return callback(null, true);
-      
-//      // Put this ABOVE app and io setup
+// // ─── CORS ────────────────────────────────────────────────────────────────────
 // const allowedOrigins = [
 //   "https://eduflow-client-jgsd.vercel.app",
 //   "https://eduflow-client-382a.vercel.app",
 //   /^https:\/\/eduflow-client-jgsd.*\.vercel\.app$/,
 //   /^https:\/\/eduflow-client-382a.*\.vercel\.app$/,
 //   "http://localhost:5173",
-//   "http://localhost:3000"
+//   "http://localhost:3000",
 // ];
 
 // const corsHandler = (origin, callback) => {
-//   if (!origin) return callback(null, true);
-//   const allowed = allowedOrigins.some(o =>
+//   if (!origin) return callback(null, true); // allow non-browser requests
+//   const allowed = allowedOrigins.some((o) =>
 //     o instanceof RegExp ? o.test(origin) : o === origin
 //   );
-//   allowed ? callback(null, true) : callback(new Error('Not allowed by CORS'));
+//   allowed ? callback(null, true) : callback(new Error("Not allowed by CORS"));
 // };
 
-// // Express
-// app.use(cors({ origin: corsHandler, credentials: true }));
+// // ─── APP SETUP ───────────────────────────────────────────────────────────────
+// const app = express();
+// const PORT = process.env.PORT || 3000;
 
-// // Socket.IO
-// const io = new Server(server, {
-//   cors: { origin: corsHandler, methods: ["GET", "POST"], credentials: true }
+// cloudinary.v2.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET,
 // });
-      
-//       const isAllowed = allowedOrigins.some(allowed => {
-//         if (allowed instanceof RegExp) return allowed.test(origin);
-//         return allowed === origin;
-//       });
-      
-//       callback(null, isAllowed);
-//     },
+
+// app.use(cors({ origin: corsHandler, credentials: true }));
+// app.use(express.json());
+// connectDB();
+
+// // ─── ROUTES ──────────────────────────────────────────────────────────────────
+// app.get("/", (req, res) => res.send("🚀 Server is running..."));
+// app.use("/api/auth", authRoutes);
+// app.use("/api/upload", uploadRoutes);
+// app.use("/api/course", courseRoutes);
+// app.use("/api/payment", paymentRoutes);
+// app.use("/api/notifications", notificationRoutes);
+// app.use("/api/messages", groupchatRoutes);
+// app.use("/api/review", reviewRoutes);
+// app.use("/api/delete", accountdeleteRoutes);
+// app.use("/api/quiz", quizRoutes);
+// app.use("/api/assignments", assignmentsRoutes);
+// app.use("/api/cloudinary", cloudinaryRoutes);
+
+// // ─── HTTP + SOCKET.IO ────────────────────────────────────────────────────────
+// const server = createServer(app);
+
+// const io = new Server(server, {
+//   cors: {
+//     origin: corsHandler,
 //     methods: ["GET", "POST"],
 //     credentials: true,
 //   },
 // });
+
+// // Attach io to every request so routes can emit events
 // app.use((req, res, next) => {
 //   req.io = io;
 //   next();
 // });
 
-// // SOCKET LOGIC
+// // ─── SOCKET LOGIC ────────────────────────────────────────────────────────────
 // io.on("connection", (socket) => {
 //   console.log("⚡ New client connected:", socket.id);
 
-//   // Course notification (when instructor creates a new course)
 //   socket.on("newcourse", (courseData) => {
 //     io.emit("courseNotification", courseData);
 //     console.log("📢 Course notification sent:", courseData.title);
 //   });
 
-//   // Join course room
 //   socket.on("joinCourse", (courseId) => {
 //     socket.join(courseId);
 //     console.log(`✅ User ${socket.id} joined course ${courseId}`);
-
-//     // Notify others in the room
-//     socket.to(courseId).emit("userJoined", {
-//       message: "A new user joined the chat",
-//     });
+//     socket.to(courseId).emit("userJoined", { message: "A new user joined the chat" });
 //   });
-
-//   // Handle messages
-//  socket.on("sendMessage", async ({ courseId, user, message }) => {
-//   try {
-//     if (!user?._id) {
-//       console.warn("❌ Missing user._id in message");
-//       return;
+//  socket.on("join", (userId) => {
+//     socket.join(userId);
+//     console.log(`🔔 User ${userId} joined their notification room`);
+//   });
+//   socket.on("sendMessage", async ({ courseId, user, message }) => {
+//     try {
+//       if (!user?._id) {
+//         console.warn("❌ Missing user._id in message");
+//         return;
+//       }
+//       const newMsg = await GroupMessage.create({
+//         courseId,
+//         sender: user._id,
+//         message,
+//         timestamp: new Date(),
+//       });
+//       const populatedMsg = await newMsg.populate("sender", "name pic");
+//       io.to(courseId).emit("receiveMessage", {
+//         _id: populatedMsg._id,
+//         user: { name: populatedMsg.sender.name, avatar: populatedMsg.sender.pic },
+//         message: populatedMsg.message,
+//         timestamp: populatedMsg.timestamp,
+//       });
+//     } catch (err) {
+//       console.error("❌ Error saving message:", err);
 //     }
-
-//     const newMsg = await GroupMessage.create({
-//       courseId,
-//       sender: user._id,  // ✅ save ObjectId in DB
-//       message,
-//       timestamp: new Date(),
-//     });
-
-//     const populatedMsg = await newMsg.populate("sender", "name pic");
-
-//     // Send to everyone in the course room
-//     io.to(courseId).emit("receiveMessage", {
-//       _id: populatedMsg._id,
-//       user: {
-//         name: populatedMsg.sender.name,
-//         avatar: populatedMsg.sender.pic,
-//       },
-//       message: populatedMsg.message,
-//       timestamp: populatedMsg.timestamp,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error saving message:", err);
-//   }
-// });
-
+//   });
 
 //   socket.on("disconnect", () => {
 //     console.log("❌ User disconnected:", socket.id);
 //   });
 // });
-
-// // Start server
+// export  {io}
+// // ─── START ───────────────────────────────────────────────────────────────────
 // server.listen(PORT, () => {
-//   console.log(`✅ Server running on ${PORT}`);
+//   console.log(`✅ Server running on port ${PORT}`);
 // });
 
 
@@ -336,7 +475,7 @@ import GroupMessage from "./src/models/GroupMessage.js";
 
 dotenv.config();
 
-// ─── CORS ────────────────────────────────────────────────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   "https://eduflow-client-jgsd.vercel.app",
   "https://eduflow-client-382a.vercel.app",
@@ -347,28 +486,48 @@ const allowedOrigins = [
 ];
 
 const corsHandler = (origin, callback) => {
-  if (!origin) return callback(null, true); // allow non-browser requests
+  if (!origin) return callback(null, true);
   const allowed = allowedOrigins.some((o) =>
     o instanceof RegExp ? o.test(origin) : o === origin
   );
   allowed ? callback(null, true) : callback(new Error("Not allowed by CORS"));
 };
 
-// ─── APP SETUP ───────────────────────────────────────────────────────────────
+// ─── APP + SERVER + SOCKET SETUP (must happen before routes) ──────────────────
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ✅ create http server and io FIRST — before any routes
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: corsHandler,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// ─── CLOUDINARY ───────────────────────────────────────────────────────────────
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ─── GLOBAL MIDDLEWARE ────────────────────────────────────────────────────────
 app.use(cors({ origin: corsHandler, credentials: true }));
 app.use(express.json());
+
+// ✅ attach io to req BEFORE routes so every controller has access to req.io
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 connectDB();
 
-// ─── ROUTES ──────────────────────────────────────────────────────────────────
+// ─── ROUTES (after io middleware) ─────────────────────────────────────────────
 app.get("/", (req, res) => res.send("🚀 Server is running..."));
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
@@ -382,38 +541,24 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/assignments", assignmentsRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
-// ─── HTTP + SOCKET.IO ────────────────────────────────────────────────────────
-const server = createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: corsHandler,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-// Attach io to every request so routes can emit events
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
-// ─── SOCKET LOGIC ────────────────────────────────────────────────────────────
+// ─── SOCKET LOGIC ─────────────────────────────────────────────────────────────
 io.on("connection", (socket) => {
   console.log("⚡ New client connected:", socket.id);
 
-  socket.on("newcourse", (courseData) => {
-    io.emit("courseNotification", courseData);
-    console.log("📢 Course notification sent:", courseData.title);
+  // ✅ user joins their personal notification room after login
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log(`🔔 User ${userId} joined their notification room`);
   });
 
+  // join a course room for group chat
   socket.on("joinCourse", (courseId) => {
     socket.join(courseId);
     console.log(`✅ User ${socket.id} joined course ${courseId}`);
     socket.to(courseId).emit("userJoined", { message: "A new user joined the chat" });
   });
 
+  // group chat messages
   socket.on("sendMessage", async ({ courseId, user, message }) => {
     try {
       if (!user?._id) {
@@ -428,9 +573,9 @@ io.on("connection", (socket) => {
       });
       const populatedMsg = await newMsg.populate("sender", "name pic");
       io.to(courseId).emit("receiveMessage", {
-        _id: populatedMsg._id,
-        user: { name: populatedMsg.sender.name, avatar: populatedMsg.sender.pic },
-        message: populatedMsg.message,
+        _id:       populatedMsg._id,
+        user:      { name: populatedMsg.sender.name, avatar: populatedMsg.sender.pic },
+        message:   populatedMsg.message,
         timestamp: populatedMsg.timestamp,
       });
     } catch (err) {
@@ -443,7 +588,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// ─── START ───────────────────────────────────────────────────────────────────
+// ─── EXPORT io (used in controllers via import) ───────────────────────────────
+export { io };
+
+// ─── START ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });

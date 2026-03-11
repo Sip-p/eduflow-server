@@ -5,13 +5,13 @@ import Lesson from "../models/Lesson.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import Assignment from "../models/Assignment.js";
-
+import { io } from "../../index.js"; // adjust path based on where your controller is
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE COURSE  POST /api/course/create
 // ─────────────────────────────────────────────────────────────────────────────
 export const createCourse = async (req, res) => {
   try {
-    const instructorId = req.user._id;
+     const instructorId = req.user._id;
     const {
       title, description, price, category,
       level = "beginner", thumbnail, published = false,
@@ -83,21 +83,55 @@ export const createCourse = async (req, res) => {
           course: newCourse._id,
         });
       }
-    }
+       // build notification docs for all students
+      // ── after chapter loop ends ──
+if (published) {
+  const students = await User.find({ role: "student" }, "_id");
 
-    // Step 3: Update totalDuration
+  if (students.length > 0) {
+    const notificationDocs = students.map((student) => ({
+      recipient: student._id,
+      type:      "Course Published",
+      message:   `New course available: "${newCourse.title}" by ${req.user.name}`,
+      course:    newCourse._id,
+      data:      { courseId: newCourse._id, instructorName: req.user.name },
+      read:      false,
+    }));
+
+    // insert all into DB
+    const created = await Notification.insertMany(notificationDocs);
+
+    // emit to each student's personal room
+    // req.io.to(userId) only reaches that specific user
+    created.forEach((notif) => {
+      req.io.to(notif.recipient.toString()).emit("notification", {
+        _id:       notif._id,
+        type:      notif.type,
+        message:   notif.message,
+        course:    newCourse._id,
+        data:      notif.data,
+        read:      false,
+        createdAt: notif.createdAt,
+      });
+    });
+  }
+}
+
+    }
+     // Step 3: Update totalDuration
     await Course.findByIdAndUpdate(newCourse._id, { totalDuration });
 
     // Step 4: Notification (non-critical)
-    try {
-      await Notification.create({
-        recipient: instructorId,
-        course: newCourse._id,
-        message: `Your course "${newCourse.title}" was ${published ? "published" : "saved as draft"}`,
-      });
-    } catch (e) {
-      console.warn("Notification failed:", e.message);
-    }
+   try {
+  await Notification.create({
+    recipient: instructorId,
+    type: "Course Published",
+    course: newCourse._id,
+    message: `Your course "${newCourse.title}" was ${published ? "published" : "saved as draft"}`,
+  });
+} catch (e) {
+  console.warn("Notification failed:", e.message);
+}
 
     // Step 5: Socket event
     if (published && req.io) {
@@ -126,6 +160,9 @@ export const createCourse = async (req, res) => {
   }
 };
 
+ 
+
+ 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET ALL COURSES  GET /api/course
 // Query: category, published, minPrice, maxPrice, search, sort, order
@@ -179,9 +216,9 @@ export const getAllCourses = async (req, res) => {
       { $project: { instructorData: 0, studentsEnrolled: 0 } },
       { $sort: { [sort]: order === "desc" ? -1 : 1 } },
     ];
-console.time("getAllCourses");
+// console.time("getAllCourses");
     const courses = await Course.aggregate(pipeline);
-    console.timeEnd("getAllCourses"); 
+    // console.timeEnd("getAllCourses"); 
     // const courses = await Course.aggregate(pipeline);
     return res.status(200).json({ success: true, courses, total: courses.length });
 
@@ -194,6 +231,26 @@ console.time("getAllCourses");
 // ─────────────────────────────────────────────────────────────────────────────
 // GET COURSE BY ID  GET /api/course/:id
 // ─────────────────────────────────────────────────────────────────────────────
+// export const getCourseById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+// console.log("...")
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ success: false, message: "Invalid course ID" });
+//     }
+
+//     const course = await Course.findById(id) ;
+//     console.log("Course found:", course);
+//     if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+
+//     return res.status(200).json({ success: true, course });
+
+//   } catch (error) {
+//     console.error("Get course by ID error:", error.message);
+//     return res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const getCourseById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -202,10 +259,66 @@ export const getCourseById = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid course ID" });
     }
 
-    const course = await Course.findById(id).populate("instructor", "name email pic");
-    if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+    const result = await Course.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
 
-    return res.status(200).json({ success: true, course });
+      // Join chapters with nested lessons
+      {
+        $lookup: {
+          from: "chapters",
+          localField: "_id",
+          foreignField: "course",
+          as: "chapters",
+          pipeline: [
+            { $sort: { order: 1 } },
+            {
+              $lookup: {
+                from: "lessons",
+                localField: "_id",
+                foreignField: "chapter",
+                as: "lessons",
+                pipeline: [
+                  { $sort: { order: 1 } },
+                  {
+                    $project: {
+                      title: 1, duration: 1,
+                      isFree: 1, order: 1,
+                      videoUrl: 1, description: 1
+                    }
+                  }
+                ]
+              }
+            },
+            { $project: { title: 1, description: 1, order: 1, lessons: 1 } }
+          ]
+        }
+      },
+
+      // Join instructor
+      {
+        $lookup: {
+          from: "users",
+          localField: "instructor",
+          foreignField: "_id",
+          as: "instructor",
+          pipeline: [{ $project: { name: 1, pic: 1, email: 1 } }]
+        }
+      },
+      { $unwind: "$instructor" },
+
+      {
+        $addFields: {
+          enrollmentCount: { $size: { $ifNull: ["$studentsEnrolled", []] } }
+        }
+      },
+      { $project: { studentsEnrolled: 0, __v: 0 } }
+    ]);
+
+    if (!result.length) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    return res.status(200).json({ success: true, course: result[0] });
 
   } catch (error) {
     console.error("Get course by ID error:", error.message);
@@ -309,7 +422,7 @@ export const getLessonVideo = async (req, res) => {
       Course.findById(courseId),
     ]);
 
-    const isEnrolled = user?.coursesenrolled?.some((c) => c.toString() === courseId);
+    const isEnrolled = user?.coursesenrolled?.some((c) => c.course?.toString() === courseId);
     const isInstructor = course?.instructor.toString() === userId.toString();
 
     if (!isEnrolled && !isInstructor) {
@@ -326,6 +439,33 @@ export const getLessonVideo = async (req, res) => {
   }
 };
 
+// _________________________________________________________
+//Auto Enroll in Free Course  POST /api/course/auto-enroll/:courseId
+//___________________________________________________________
+export const autoEnrollFree = async (req, res) => {
+  try {
+    const userId = req.user._id
+    const { courseId } = req.params
+
+    const course = await Course.findById(courseId)
+    if (!course) return res.status(404).json({ success: false, message: "Course not found" })
+    if (course.price > 0) return res.status(400).json({ success: false, message: "Course is not free" })
+
+    const alreadyEnrolled = await User.findOne({ _id: userId, "coursesenrolled.course": courseId })
+    if (alreadyEnrolled) return res.status(200).json({ success: true, message: "Already enrolled" })
+
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        coursesenrolled: { course: courseId, progressStatus: "in-progress" }
+      }
+    })
+
+    return res.status(200).json({ success: true, message: "Enrolled successfully" })
+  } catch (error) {
+    console.error("Auto enroll error:", error)
+    res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK LESSON COMPLETE  PATCH /api/course/:courseId/lesson/:lessonId/complete
 // ─────────────────────────────────────────────────────────────────────────────
@@ -453,6 +593,41 @@ export const deleteCourse = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // TOGGLE PUBLISH  PATCH /api/course/:id/publish
 // ─────────────────────────────────────────────────────────────────────────────
+// export const toggleCoursePublish = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ success: false, message: "Invalid course ID" });
+//     }
+
+//     const course = await Course.findById(id);
+//     if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+
+//     if (course.instructor.toString() !== req.user._id.toString()) {
+//       return res.status(403).json({ success: false, message: "Unauthorized" });
+//     }
+
+//     if (!course.published && course.totalLessons === 0) {
+//       return res.status(400).json({ success: false, message: "Cannot publish a course without lessons" });
+//     }
+
+//     course.published = !course.published;
+//     await course.save();
+//     await course.populate("instructor", "name email pic");
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `Course ${course.published ? "published" : "unpublished"} successfully`,
+//       course,
+//     });
+
+//   } catch (error) {
+//     return res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+ 
+ 
 export const toggleCoursePublish = async (req, res) => {
   try {
     const { id } = req.params;
@@ -475,6 +650,38 @@ export const toggleCoursePublish = async (req, res) => {
     course.published = !course.published;
     await course.save();
     await course.populate("instructor", "name email pic");
+
+    // ── Only notify when publishing, not unpublishing ──
+    if (course.published) {
+      // find all students
+      const students = await User.find({ role: "student" }, "_id");
+
+      // // build notification docs for all students
+      // const notifications = students.map((student) => ({
+      //   recipient: student._id,
+      //   type:      "Course Published",
+      //   message:   `New course available: "${course.title}" by ${course.instructor.name}`,
+      //   course:    course._id,
+      //   data:      { courseId: course._id, instructorName: course.instructor.name },
+      // }));
+
+      // // bulk insert — one DB call instead of N
+      // const created = await Notification.insertMany(notifications);
+
+      // // emit socket event to each student who is currently online
+      // const io = io();
+      // created.forEach((notif) => {
+      //   io.to(notif.recipient.toString()).emit("notification", {
+      //     _id:       notif._id,
+      //     type:      notif.type,
+      //     message:   notif.message,
+      //     course:    course._id,
+      //     data:      notif.data,
+      //     read:      false,
+      //     createdAt: notif.createdAt,
+      //   });
+      // });
+    }
 
     return res.status(200).json({
       success: true,
@@ -512,8 +719,7 @@ export const getCoursesByInstructor = async (req, res) => {
 export const getInstdashboarddata = async (req, res) => {
   try {
     const instructorId = req.user._id;
-console.log("REQ.USER:", req.user);
-    const [stats] = await Course.aggregate([
+     const [stats] = await Course.aggregate([
       { $match: { instructor: new mongoose.Types.ObjectId(instructorId) } },
       {
         $group: {
@@ -572,7 +778,7 @@ export const addMyCourses = async (req, res) => {
     if (!course.published) return res.status(400).json({ success: false, message: "Course not available" });
 
     const alreadyEnrolled = user.coursesenrolled?.some(
-      (c) => c.toString() === courseId
+      (c) => c.course?.toString() === courseId
     );
     if (alreadyEnrolled) {
       return res.status(400).json({ success: false, message: "Already enrolled" });
@@ -581,8 +787,7 @@ export const addMyCourses = async (req, res) => {
     // Two separate writes (no transaction on standalone MongoDB)
     await User.findByIdAndUpdate(userId, {
       $push: {
-        coursesenrolled: courseId,
-        courseProgress: {
+coursesenrolled: { course: courseId, progressStatus: "in-progress" },        courseProgress: {
           course: courseId,
           status: "not started",
           completedLessons: [],
@@ -621,24 +826,38 @@ export const getMyCourses = async (req, res) => {
     const userId = req.user._id;
 
     const user = await User.findById(userId)
-      .populate("coursesenrolled", "title description price category thumbnail totalLessons totalDuration")
-      .populate("courseProgress.course", "title totalLessons");
+.populate("coursesenrolled.course", "title description price category thumbnail totalLessons totalDuration")    
+  .populate("courseProgress.course", "title totalLessons");
 
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    const coursesWithProgress = user.coursesenrolled.map((course) => {
-      const progress = user.courseProgress.find(
-        (p) => p.course?._id?.toString() === course._id.toString()
-      );
-      return {
-        ...course.toObject(),
-        progressStatus: progress?.status || "not started",
-        progressPercent: progress?.progressPercent || 0,
-        completedLessons: progress?.completedLessons?.length || 0,
-        lastAccessedLesson: progress?.lastAccessedLesson || null,
-      };
-    });
-
+    // const coursesWithProgress = user.coursesenrolled.map((course) => {
+    //   const progress = user.courseProgress.find(
+    //     (p) => p.course?._id?.toString() === course._id.toString()
+    //   );
+    //   return {
+    //     ...course.toObject(),
+    //     progressStatus: progress?.status || "not started",
+    //     progressPercent: progress?.progressPercent || 0,
+    //     completedLessons: progress?.completedLessons?.length || 0,
+    //     lastAccessedLesson: progress?.lastAccessedLesson || null,
+    //   };
+    // });
+const coursesWithProgress = user.coursesenrolled
+  .filter((enrolled) => enrolled.course != null)  // ← skip orphaned enrollments
+  .map((enrolled) => {
+    const course = enrolled.course
+    const progress = user.courseProgress?.find(
+      (p) => p.course?._id?.toString() === course._id.toString()
+    )
+    return {
+      ...course.toObject(),
+      progressStatus: enrolled.progressStatus || "in-progress",
+      progressPercent: progress?.progressPercent || 0,
+      completedLessons: progress?.completedLessons?.length || 0,
+      lastAccessedLesson: progress?.lastAccessedLesson || null,
+    }
+  })
     return res.status(200).json({ success: true, mycourses: coursesWithProgress });
 
   } catch (error) {
