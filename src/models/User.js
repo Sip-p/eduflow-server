@@ -80,6 +80,21 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+  },
+  // TTL index — MongoDB auto-deletes unverified users after 1 hour
+    // Once emailVerified = true, set this field to null to prevent deletion
+    emailVerificationExpiry:{
+       type:Date,
+       default:()=>new Date(Date.now()+60*60*1000),
+       index:{expireAfterSeconds:0}//TTL index to auto-delete after expiry time
+    }
+,
   password: {
     type: String,
     required: true
