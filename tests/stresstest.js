@@ -23,7 +23,7 @@ async function runStressTest() {
 
     const result = await autocannon({
         url: baseUrl,
-        connections: 10,
+        connections: 100,
         pipelining: 1,
         duration: 30,
         requests: [
