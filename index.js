@@ -20,7 +20,8 @@ import assignmentsRoutes from "./src/routes/assignmentsRoutes.js";
 import GroupMessage from "./src/models/GroupMessage.js";
 import morgan from "morgan";
 
-import { AppError, errorHandler } from "../server/src/middleware/errorMiddleware.js";
+// import { AppError, errorHandler } from "../server/src/middleware/errorMiddleware.js";
+import { AppError, errorHandler } from "./src/middleware/errorMiddleware.js";
 dotenv.config();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -127,9 +128,9 @@ io.on("connection", (socket) => {
       });
       const populatedMsg = await newMsg.populate("sender", "name pic");
       io.to(courseId).emit("receiveMessage", {
-        _id:       populatedMsg._id,
-        user:      { name: populatedMsg.sender.name, avatar: populatedMsg.sender.pic },
-        message:   populatedMsg.message,
+        _id: populatedMsg._id,
+        user: { name: populatedMsg.sender.name, avatar: populatedMsg.sender.pic },
+        message: populatedMsg.message,
         timestamp: populatedMsg.timestamp,
       });
     } catch (err) {
