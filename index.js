@@ -26,6 +26,7 @@ dotenv.config();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
+  "https://eduflow-client-8n92.vercel.app",
   "https://eduflow-client-jgsd.vercel.app",
   "https://eduflow-client-382a.vercel.app",
   /^https:\/\/eduflow-client-jgsd.*\.vercel\.app$/,
