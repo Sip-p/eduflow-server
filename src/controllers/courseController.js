@@ -230,59 +230,62 @@ export const createCourse = async (req, res) => {
 //   }
 // }; 
 
-export const getAllCourses = async (req, res) => {
-  try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 8;
+// ''
+// export const getAllCourses = async (req, res) => {
+//   try {
+//     const page = Number(req.query.page) || 1;
+//     const limit = Number(req.query.limit) || 8;
 
-    const skip = (page - 1) * limit;
-    const { category, search, minPrice, maxPrice } = req.query;
-    const matchStage = {}
-    if (category) {
-      matchStage.category = category;
-    }
-    if (minPrice || maxPrice) {
-      matchStage.price = {}
-      if (minPrice) {
-        matchStage.price.$gte = Number(minPrice)
-      }
-      if (maxPrice) {
-        matchStage.price.$lte = Number(maxPrice)
-      }
-    }
-    if (search) {
-      matchStage.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
-    }
-    const pipeline = [
-      { ...Object.keys(matchStage).length > 0 ? { $match: matchStage } : { $match: {} } },
-      {
-        $lookup: {
-          from: "users",
-          localField: "instructor",
-          foreignField: "_id",
-          as: "instructorData"
-        }
-      },
-      { $unwind: { path: "$instructorData", preserveNullAndEmptyArrays: true } },
-      {
-        $addFields: {
-          enrollmentCount: { $size: { $ifNull: ["$studentsEnrolled", []] } }
-        }
-      }
-    ]
-
-
-
+//     const skip = (page - 1) * limit;
+//     const { category, search, minPrice, maxPrice } = req.query;
+//     const matchStage = {}
+//     if (category) {
+//       matchStage.category = category;
+//     }
+//     if (minPrice || maxPrice) {
+//       matchStage.price = {}
+//       if (minPrice) {
+//         matchStage.price.$gte = Number(minPrice)
+//       }
+//       if (maxPrice) {
+//         matchStage.price.$lte = Number(maxPrice)
+//       }
+//     }
+//     if (search) {
+//       matchStage.$or = [
+//         { title: { $regex: search, $options: "i" } },
+//         { description: { $regex: search, $options: "i" } },
+//       ];
+//     }
+//     const pipeline = [
+//       { ...Object.keys(matchStage).length > 0 ? { $match: matchStage } : { $match: {} } },
+//       {
+//         $lookup: {
+//           from: "users",
+//           localField: "instructor",
+//           foreignField: "_id",
+//           as: "instructor"
+//         }
+//       },
+//       { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
+//       {
+//         $addFields: {
+//           enrollmentCount: { $size: { $ifNull: ["$studentsEnrolled", []] } }
+//         }
+//       }
+//     ]
 
 
 
-  } catch (error) {
 
-  }
-}
+
+
+//   } catch (error) {
+
+//   }
+// }
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET COURSE BY ID  GET /api/course/:id
@@ -306,6 +309,119 @@ export const getAllCourses = async (req, res) => {
 //     return res.status(500).json({ success: false, message: error.message });
 //   }
 // };
+
+export const getAllCourses = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 8;
+
+    const skip = (page - 1) * limit;
+
+    const { category, search, minPrice, maxPrice } = req.query;
+
+    const matchStage = {};
+
+    if (category) {
+      matchStage.category = category;
+    }
+
+    if (minPrice || maxPrice) {
+      matchStage.price = {};
+
+      if (minPrice) {
+        matchStage.price.$gte = Number(minPrice);
+      }
+
+      if (maxPrice) {
+        matchStage.price.$lte = Number(maxPrice);
+      }
+    }
+
+    if (search) {
+      matchStage.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const pipeline = [
+      ...(Object.keys(matchStage).length > 0
+        ? [{ $match: matchStage }]
+        : []),
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "instructor",
+          foreignField: "_id",
+          as: "instructor",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$instructor",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      {
+        $addFields: {
+          enrollmentCount: {
+            $size: {
+              $ifNull: ["$studentsEnrolled", []],
+            },
+          },
+        },
+      },
+
+      {
+        $project: {
+          studentsEnrolled: 0,
+        },
+      },
+    ];
+
+    // Sorting
+    pipeline.push({
+      $sort: {
+        createdAt: -1,
+      },
+    });
+
+    // Pagination
+    pipeline.push({ $skip: skip });
+
+    pipeline.push({ $limit: limit });
+
+    // Execute aggregation
+    const courses = await Course.aggregate(pipeline);
+
+    // Total count
+    const totalCourses = await Course.countDocuments(matchStage);
+
+    // Send response
+    return res.status(200).json({
+      success: true,
+      courses,
+      pagination: {
+        page,
+        limit,
+        totalCourses,
+        totalPages: Math.ceil(totalCourses / limit),
+      },
+    });
+
+  } catch (error) {
+    console.error("Get all courses error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 
 export const getCourseById = async (req, res) => {
   try {
