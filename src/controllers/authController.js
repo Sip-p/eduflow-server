@@ -3,7 +3,7 @@ import User from '../models/User.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
-import nodemailer from "nodemailer"
+// import nodemailer from "nodemailer"
 import multer from 'multer'
 import cloudinary from 'cloudinary';
 import path from 'path'
@@ -481,23 +481,23 @@ export const requestPasswordReset = async (req, res) => {
     console.log("Send email with this link", resetUrl);
 
     // Nodemailer setup
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      }
-    });
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error("SMTP verification failed:", error);
-      } else {
-        console.log("SMTP server is ready to send emails");
-      }
-    });
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   auth: {
+    //     user: process.env.EMAIL_USER,
+    //     pass: process.env.EMAIL_PASS,
+    //   }
+    // });
+    // transporter.verify((error, success) => {
+    //   if (error) {
+    //     console.error("SMTP verification failed:", error);
+    //   } else {
+    //     console.log("SMTP server is ready to send emails");
+    //   }
+    // });
 
     const mailOptions = {
-      from: `"EduFlow Support"<${process.env.EMAIL_USER}>`,
+      from: `"EduFlow Support" <${process.env.BREVO_EMAIL}>`,
       to: user.email,
       subject: "Password reset request",
       html: `
