@@ -367,9 +367,17 @@ export const UserSignUp = catchAsync(async (req, res, next) => {
         `,
     });
   } catch (emailError) {
-    // Email delivery failed — abort everything, nothing saved yet
+
+    console.error("EMAIL ERROR:", emailError);
+
     fs.unlinkSync(path.resolve(file.path));
-    return next(new AppError("Failed to send verification email", 400));
+
+    return next(
+      new AppError(
+        emailError.message || "Failed to send verification email",
+        400
+      )
+    );
   }
 
   // ── 5. Upload to Cloudinary only after email succeeded ─────────────────
