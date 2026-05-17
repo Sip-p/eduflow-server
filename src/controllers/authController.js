@@ -347,7 +347,7 @@ export const UserSignUp = catchAsync(async (req, res, next) => {
 
   try {
     await transporter.sendMail({
-      from: `"EduFlow Support" <${process.env.EMAIL_USER}>`,
+      from: `"EduFlow Support" <${process.env.BREVO_EMAIL}>`,
       to: email,
       subject: 'Verify your EduFlow account',
       html: `
